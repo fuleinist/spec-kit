@@ -81,7 +81,10 @@ class CommandStep(StepBase):
                         preview_invocation = impl.build_command_invocation(
                             command, args_str
                         )
-                except Exception:
+                except (ValueError, TypeError, AttributeError, KeyError):
+                    # Defensive: a misconfigured third-party integration can raise
+                    # while building its invocation string. Fall back to the
+                    # generic preview so dry-run output is still useful.
                     preview_invocation = None
             if preview_invocation:
                 preview = f"DRY RUN: would invoke {preview_invocation!r}"

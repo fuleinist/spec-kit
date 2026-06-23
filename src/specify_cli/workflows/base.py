@@ -74,13 +74,16 @@ class StepContext:
     #: Current run ID.
     run_id: str | None = None
 
-    #: When ``True``, every step implementation must short-circuit and
-    #: return a synthetic ``StepResult`` carrying a preview of what would
-    #: have been dispatched — no subprocess, no CLI call, no network I/O.
-    #: Step implementations publish the preview on ``output["message"]``
-    #: (the original, so ``{{ steps.<id>.output.message }}`` keeps
-    #: resolving) and ``output["dry_run_message"]`` (the rendered
-    #: ``[DRY RUN] ...`` body, consumed by the CLI's preview loop).
+    #: When ``True``, step implementations that honor ``dry_run`` should
+    #: short-circuit and return a synthetic ``StepResult`` carrying a
+    #: preview of what would have been dispatched. Today this is
+    #: implemented for the built-in ``CommandStep``, ``PromptStep``, and
+    #: ``GateStep`` types — these set ``output["message"]`` (the original)
+    #: and ``output["dry_run_message"]`` (the rendered ``[DRY RUN] ...``
+    #: body consumed by the CLI's preview loop). Other step types
+    #: (e.g. ``init``, ``shell``) may still perform their normal work in
+    #: dry-run mode until they are updated to honor the flag; the engine
+    #: itself does not enforce a dry-run contract.
     #: Persisted on the ``RunState`` so :meth:`WorkflowEngine.resume` can
     #: restore it after a process restart — an interrupted dry-run must
     #: not silently turn into a real run.

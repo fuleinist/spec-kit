@@ -13,6 +13,7 @@ import pytest
 import json
 import os
 import platform
+import sys
 import tempfile
 import shutil
 import tomllib
@@ -58,12 +59,16 @@ def temp_dir():
     """Create a temporary directory for tests."""
     tmpdir = tempfile.mkdtemp()
     yield Path(tmpdir)
-    # ``ignore_errors=True`` so a file still locked by another process
-    # (most commonly on Windows, where AV scanners briefly hold a
-    # handle on freshly created binaries in ``tmp_path``) doesn't fail
-    # the test's teardown — the OS will reap the directory on the next
-    # reboot. Without this, a benign race becomes a flaky CI failure.
-    shutil.rmtree(tmpdir, ignore_errors=True)
+    # ``ignore_errors=True`` is Windows-only: on Windows, AV scanners briefly
+    # hold a handle on freshly created binaries in ``tmp_path``, which would
+    # make rmtree fail with PermissionError. On other platforms a real
+    # permission issue should surface as a test failure, so we propagate it
+    # by default. The OS will reap the directory on the next reboot either
+    # way.
+    shutil.rmtree(
+        tmpdir,
+        ignore_errors=sys.platform == "win32",
+    )
 
 
 @pytest.fixture
